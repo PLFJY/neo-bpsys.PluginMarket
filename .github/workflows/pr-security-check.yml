@@ -116,7 +116,7 @@ jobs:
 
           changed_files = changed_files_str.split()
 
-          git fetch_result = os.system('git fetch origin main 2>/dev/null')
+          os.system('git fetch origin main 2>/dev/null')
           os.system('git checkout origin/main -- PluginManifests/ 2>/dev/null || true')
           os.system('git checkout HEAD -- PluginManifests/ 2>/dev/null || true')
 

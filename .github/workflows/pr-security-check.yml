@@ -488,9 +488,13 @@ jobs:
                           
                           result = response.json()
                           
+                          print(f"API Response: {json.dumps(result, indent=2, ensure_ascii=False)[:2000]}")
+                          
                           if result.get('response_code') == 0:
                               data = result.get('data', {})
                               multiengines = data.get('multiengines', {})
+                              
+                              print(f"Multiengines data: {json.dumps(multiengines, indent=2, ensure_ascii=False)[:2000]}")
                               
                               if multiengines:
                                   total_engines = 0
@@ -501,7 +505,7 @@ jobs:
                                   
                                   for engine_name, engine_data in multiengines.items():
                                       if isinstance(engine_data, dict):
-                                          status = engine_data.get('result', '').lower()
+                                          status = str(engine_data.get('result', '')).lower()
                                           total_engines += 1
                                           
                                           if status == 'safe':
@@ -515,6 +519,23 @@ jobs:
                                               })
                                           else:
                                               failed_engines += 1
+                                      elif isinstance(engine_data, str):
+                                          status = engine_data.lower()
+                                          total_engines += 1
+                                          
+                                          if status == 'safe':
+                                              safe_engines += 1
+                                          elif status in ['malicious', 'suspicious']:
+                                              unsafe_engines += 1
+                                              engine_details.append({
+                                                  'engine': engine_name,
+                                                  'result': engine_data,
+                                                  'detail': ''
+                                              })
+                                          else:
+                                              failed_engines += 1
+                                  
+                                  print(f"Engine stats - Total: {total_engines}, Safe: {safe_engines}, Unsafe: {unsafe_engines}, Failed: {failed_engines}")
                                   
                                   if total_engines > 0:
                                       scan_complete = True

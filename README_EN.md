@@ -10,15 +10,21 @@ If you want to add a new plugin or update an existing one, follow this process.
 2. In your fork, add or edit `PluginManifests/<PluginId>.yml`.
 3. Make sure the manifest `id` is unique, and do not change the existing `id` when updating a plugin.
 4. Fill in or update plugin metadata such as `name`, `description`, `version`, `apiVersion`, `author`, `icon`, `readme`, `url`, and `downloadURL`.
-5. Run:
+5. If you want to verify locally, run:
 
 ```powershell
 python scripts/build-plugin-index.py
 ```
 
-6. Confirm that the root `PluginIndex.json` has been generated or updated.
-7. Commit both your manifest file and the updated `PluginIndex.json`.
+6. Commit only the manifest file you changed under `PluginManifests/`.
+7. Do not commit the root `PluginIndex.json`.
 8. Open a Pull Request against the `main` branch.
+
+## Important Warning
+
+- `PluginIndex.json` is a generated file and is rebuilt automatically by GitHub Actions after merge.
+- Plugin authors do not need to and must not edit `PluginIndex.json` manually in a PR.
+- If a PR includes manual changes to `PluginIndex.json`, the pre-check Action will fail and the change will not be merged.
 
 ## Manifest Requirements
 
@@ -27,6 +33,21 @@ python scripts/build-plugin-index.py
 - Only flat `key: value` structure is supported
 - Nested objects and arrays are not supported
 - Every manifest must contain a non-empty and unique `id`
+
+## Manifest Field Reference
+
+| Field | Required | Description | Example |
+| --- | --- | --- | --- |
+| `id` | ✅ | Unique plugin identifier. Do not change it after the plugin is published. | `3DViewerIDV` |
+| `name` |  | Display name of the plugin | `3DViewerIDV` |
+| `description` |  | Short summary of what the plugin does | `3D characters and scene support` |
+| `version` | ✅ | Plugin version | `0.04` |
+| `apiVersion` | ✅ | Host API version supported by the plugin | `2.0.0.0` |
+| `author` |  | Author or maintainer name | `jefcrb` |
+| `icon` |  | URL to the plugin icon | `https://.../icon.png` |
+| `readme` |  | URL to the plugin README | `https://.../README.md` |
+| `url` |  | Project homepage URL | `https://github.com/...` |
+| `downloadURL` | ✅ | Download URL for the installable package | `https://github.com/.../repo-v0.04.zip` |
 
 Example:
 
@@ -49,18 +70,24 @@ downloadURL: "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.04/repo
 
 - Create your own `PluginManifests/<PluginId>.yml`
 - Fill in the initial metadata
-- Generate and commit `PluginIndex.json`
+- Do not commit `PluginIndex.json`
 
 ### Update an Existing Plugin
 
 - Edit your existing manifest file
 - Update fields such as version, download URL, or description
 - Keep the original `id`
-- Regenerate and commit `PluginIndex.json`
+- Do not commit `PluginIndex.json`
 
 ## Repository Automation
 
-When `main` receives a push containing changes under `PluginManifests/**/*.yml`, GitHub Actions will:
+When a PR targets `main`, GitHub Actions first runs a pre-check to:
+
+1. Detect manual changes to `PluginIndex.json`.
+2. Validate changed `PluginManifests/**/*.yml` files.
+3. Rebuild the root `PluginIndex.json` to confirm the manifests can generate a valid index.
+
+After the PR is merged into `main`, GitHub Actions will:
 
 1. Scan all manifests.
 2. Rebuild the root `PluginIndex.json`.
@@ -70,6 +97,8 @@ The generated `PluginIndex.json` uses plugin `id` as the top-level key.
 
 ## Validation Rules
 
+- Changed `PluginManifests/**/*.yml` files are checked for YAML syntax first
+- Required fields: `id`, `version`, `apiVersion`, `downloadURL`
 - Each line must be a valid flat `key: value` pair
 - Lines starting with `#` are treated as comments
-- If parsing fails, `id` is missing, or duplicate `id` values are found, the GitHub Action fails
+- If parsing fails, `id` is missing, duplicate `id` values are found, or the PR manually changes `PluginIndex.json`, the GitHub Action fails

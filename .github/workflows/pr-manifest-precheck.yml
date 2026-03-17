@@ -1,0 +1,122 @@
+name: PR Manifest Precheck
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "PluginManifests/**/*.yml"
+      - "PluginIndex.json"
+      - ".github/workflows/pr-manifest-precheck.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  precheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Collect changed files
+        id: changed-files
+        shell: bash
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          {
+            echo "files<<EOF"
+            git diff --name-only "$BASE_SHA" "$HEAD_SHA"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Reject manual changes to PluginIndex.json
+        shell: bash
+        run: |
+          if printf '%s\n' "${{ steps.changed-files.outputs.files }}" | grep -Fxq 'PluginIndex.json'; then
+            echo "::error file=PluginIndex.json::PluginIndex.json is generated automatically by GitHub Actions. Do not modify or commit it in a pull request."
+            exit 1
+          fi
+
+      - name: Validate changed manifest YAML files
+        shell: bash
+        env:
+          CHANGED_FILES: ${{ steps.changed-files.outputs.files }}
+        run: |
+          python <<'PYTHON_SCRIPT'
+          import os
+          import sys
+          from pathlib import Path
+
+          import yaml
+
+          changed_files = [
+              line.strip()
+              for line in os.environ.get("CHANGED_FILES", "").splitlines()
+              if line.strip().startswith("PluginManifests/") and line.strip().endswith(".yml")
+          ]
+          required_fields = ["id", "version", "apiVersion", "downloadURL"]
+
+          if not changed_files:
+              print("No changed manifest files to validate.")
+              raise SystemExit(0)
+
+          has_error = False
+
+          for file_name in changed_files:
+              path = Path(file_name)
+              if not path.exists():
+                  continue
+
+              try:
+                  content = path.read_text(encoding="utf-8")
+              except Exception as exc:
+                  print(f"::error file={file_name}::Cannot read file: {exc}")
+                  has_error = True
+                  continue
+
+              try:
+                  data = yaml.safe_load(content)
+              except yaml.YAMLError as exc:
+                  print(f"::error file={file_name}::Invalid YAML syntax: {exc}")
+                  has_error = True
+                  continue
+
+              if data is None:
+                  print(f"::error file={file_name}::Manifest file is empty.")
+                  has_error = True
+                  continue
+
+              if not isinstance(data, dict):
+                  print(f"::error file={file_name}::Manifest must be a flat key/value object.")
+                  has_error = True
+                  continue
+
+              for field in required_fields:
+                  if field not in data or str(data[field]).strip() == "":
+                      print(f"::error file={file_name}::Missing required field '{field}' or field is empty.")
+                      has_error = True
+
+              for key, value in data.items():
+                  if isinstance(value, (dict, list)):
+                      print(f"::error file={file_name}::Field '{key}' must be a scalar value. Nested objects and arrays are not supported.")
+                      has_error = True
+
+          if has_error:
+              raise SystemExit(1)
+          PYTHON_SCRIPT
+
+      - name: Build PluginIndex.json from manifests
+        run: python scripts/build-plugin-index.py

@@ -41,8 +41,8 @@ python scripts/build-plugin-index.py
 | `id` | ✅ | Unique plugin identifier. Do not change it after the plugin is published. | `3DViewerIDV` |
 | `name` |  | Display name of the plugin | `3DViewerIDV` |
 | `description` |  | Short summary of what the plugin does | `3D characters and scene support` |
-| `version` | ✅ | Plugin version | `0.04` |
-| `apiVersion` | ✅ | Host API version supported by the plugin | `2.0.0.0` |
+| `version` | ✅ | Plugin version. Must be a numeric version string that can be parsed by .NET `System.Version`. | `1.0.0` |
+| `apiVersion` | ✅ | Host API version supported by the plugin. Must be a numeric version string that can be parsed by .NET `System.Version`. | `2.0.0.0` |
 | `author` |  | Author or maintainer name | `jefcrb` |
 | `icon` |  | URL to the plugin icon | `https://.../icon.png` |
 | `readme` |  | URL to the plugin README | `https://.../README.md` |
@@ -99,6 +99,7 @@ The generated `PluginIndex.json` uses plugin `id` as the top-level key.
 
 - Changed `PluginManifests/**/*.yml` files are checked for YAML syntax first
 - Required fields: `id`, `version`, `apiVersion`, `downloadURL`
+- `version` and `apiVersion` must be numeric version strings that can be parsed by .NET `System.Version`
 - Each line must be a valid flat `key: value` pair
 - Lines starting with `#` are treated as comments
 - If parsing fails, `id` is missing, duplicate `id` values are found, or the PR manually changes `PluginIndex.json`, the GitHub Action fails

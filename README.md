@@ -41,8 +41,8 @@ python scripts/build-plugin-index.py
 | `id` | ✅ | 插件唯一标识，新增后不要随意修改 | `3DViewerIDV` |
 | `name` |  | 插件显示名称 | `3DViewerIDV` |
 | `description` |  | 插件功能简介 | `3D characters and scene support` |
-| `version` | ✅ | 插件版本号 | `0.04` |
-| `apiVersion` | ✅ | 适配的宿主 API 版本 | `2.0.0.0` |
+| `version` | ✅ | 插件版本号，必须是可转换为 .NET `Version` 对象的纯数字版本号 | `1.0.0` |
+| `apiVersion` | ✅ | 适配的宿主 API 版本，必须是可转换为 .NET `Version` 对象的纯数字版本号 | `2.0.0.0` |
 | `author` |  | 作者或维护者名称 | `jefcrb` |
 | `icon` |  | 插件图标 URL | `https://.../icon.png` |
 | `readme` |  | 插件说明文档 URL | `https://.../README.md` |
@@ -99,6 +99,7 @@ downloadURL: "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.04/repo
 
 - 变更的 `PluginManifests/**/*.yml` 会先做 YAML 语法检查
 - 必填字段：`id`、`version`、`apiVersion`、`downloadURL`
+- `version` 和 `apiVersion` 必须是可转换为 .NET `Version` 对象的纯数字版本号
 - 每一行都必须是合法的扁平 `key: value` 结构
 - 以 `#` 开头的行会被当作注释
 - 如果清单解析失败、缺少 `id`、出现重复 `id`，或 PR 手动修改了 `PluginIndex.json`，GitHub Action 会失败

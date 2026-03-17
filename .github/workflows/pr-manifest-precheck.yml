@@ -56,11 +56,35 @@ jobs:
           CHANGED_FILES: ${{ steps.changed-files.outputs.files }}
         run: |
           python <<'PYTHON_SCRIPT'
+          import subprocess
           import os
-          import sys
           from pathlib import Path
 
           import yaml
+
+          def is_valid_dotnet_version(raw_value: object) -> bool:
+              value = str(raw_value).strip()
+              if not value:
+                  return False
+
+              try:
+                  result = subprocess.run(
+                      [
+                          "pwsh",
+                          "-NoLogo",
+                          "-NoProfile",
+                          "-Command",
+                          "try { [void][System.Version]::Parse($args[0]); exit 0 } catch { exit 1 }",
+                          value,
+                      ],
+                      check=False,
+                      capture_output=True,
+                      text=True,
+                  )
+              except FileNotFoundError:
+                  print("::error::PowerShell ('pwsh') is required for .NET version validation but is not available on this runner.")
+                  return False
+              return result.returncode == 0
 
           changed_files = [
               line.strip()
@@ -107,6 +131,14 @@ jobs:
               for field in required_fields:
                   if field not in data or str(data[field]).strip() == "":
                       print(f"::error file={file_name}::Missing required field '{field}' or field is empty.")
+                      has_error = True
+
+              for field in ("version", "apiVersion"):
+                  if field in data and not is_valid_dotnet_version(data[field]):
+                      print(
+                          f"::error file={file_name}::Field '{field}' must be a numeric version "
+                          "that can be parsed by .NET System.Version, such as '1.0.0' or '2.0.0.0'."
+                      )
                       has_error = True
 
               for key, value in data.items():

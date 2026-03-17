@@ -3,13 +3,13 @@
     "id": "3DViewerIDV",
     "name": "3DViewerIDV",
     "description": "3D characters and scene support",
-    "version": "0.05",
+    "version": "0.07.1",
     "apiVersion": "2.0.0.0",
     "author": "jefcrb",
     "icon": "https://raw.githubusercontent.com/jefcrb/3DViewerIDV/refs/heads/master/icon.png",
     "readme": "https://raw.githubusercontent.com/jefcrb/3DViewerIDV/refs/heads/master/README.md",
     "url": "https://github.com/jefcrb/3DViewerIDV",
-    "downloadURL": "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.05/3DViewerIDV-v0.05.zip"
+    "downloadURL": "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.07.1/3DViewerIDV-v0.07.1.zip"
   },
   "CoopBpPlugin": {
     "id": "CoopBpPlugin",

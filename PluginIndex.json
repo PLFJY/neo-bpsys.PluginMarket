@@ -11,18 +11,6 @@
     "url": "https://github.com/jefcrb/3DViewerIDV",
     "downloadURL": "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.07.1/3DViewerIDV-v0.07.1.zip"
   },
-  "CoopBpPlugin": {
-    "id": "CoopBpPlugin",
-    "name": "合作BP插件（早期开发阶段）",
-    "description": "使软件支持多人合作BP",
-    "version": "0.0.2.0",
-    "apiVersion": "2.0.0.0",
-    "author": "RenjiNotBot",
-    "icon": "https://bpsys.plfjy.top/icon.png",
-    "readme": "https://github.com/ZackZhao233/neo-bpsys-wpf.CoopBpPlugin/blob/main/README.md",
-    "url": "https://github.com/ZackZhao233/neo-bpsys-wpf.CoopBpPlugin",
-    "downloadURL": "https://github.com/ZackZhao233/neo-bpsys-wpf.CoopBpPlugin/releases/download/0.0.2.0/0.0.2.0.zip"
-  },
   "plfjy.ExamplePlugin": {
     "id": "plfjy.ExamplePlugin",
     "name": "示例插件（仅限插件开发者学习使用）",

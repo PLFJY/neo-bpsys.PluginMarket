@@ -258,6 +258,7 @@ jobs:
                   f.write("success=true\n")
                   f.write("download_info=\n")
                   f.write("large_files=\n")
+                  f.write("invalid_files=\n")
               sys.exit(0)
 
           changed_files = changed_files_str.split()
@@ -266,8 +267,18 @@ jobs:
 
           download_info = []
           large_files = []
+          invalid_files = []
           failed = False
           MAX_FILE_SIZE = 100 * 1024 * 1024
+          ZIP_MAGIC = [b'PK\x03\x04', b'PK\x05\x06', b'PK\x07\x08']
+
+          def is_valid_zip(file_path):
+              try:
+                  with open(file_path, 'rb') as f:
+                      header = f.read(4)
+                  return any(header.startswith(magic) for magic in ZIP_MAGIC)
+              except:
+                  return False
 
           for file in changed_files:
               if not os.path.exists(file):
@@ -310,7 +321,16 @@ jobs:
                                   sha256_hash.update(chunk)
                           sha256 = sha256_hash.hexdigest()
                           
-                          if file_size > MAX_FILE_SIZE:
+                          if not is_valid_zip(file_path):
+                              print(f"Invalid file type: {file_path} is not a valid ZIP file")
+                              invalid_files.append({
+                                  'plugin_id': plugin_id,
+                                  'plugin_name': plugin_name,
+                                  'file_size_mb': round(file_size_mb, 2),
+                                  'sha256': sha256,
+                                  'url': download_url
+                              })
+                          elif file_size > MAX_FILE_SIZE:
                               print(f"File too large: {file_path} ({file_size_mb:.2f} MB > 100 MB)")
                               large_files.append({
                                   'plugin_id': plugin_id,
@@ -361,12 +381,91 @@ jobs:
               f.write("large_files<<EOF\n")
               f.write(json.dumps(large_files) + "\n")
               f.write("EOF\n")
+              f.write("invalid_files<<EOF\n")
+              f.write(json.dumps(invalid_files) + "\n")
+              f.write("EOF\n")
 
           if failed:
               sys.exit(1)
           PYTHON_SCRIPT
         env:
           CHANGED_FILES: ${{ steps.changed-files.outputs.changed_files }}
+
+      - name: Post comment and close PR for invalid file types
+        if: steps.download-files.outputs.invalid_files != '' && steps.download-files.outputs.invalid_files != '[]'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const invalidFilesStr = `${{ steps.download-files.outputs.invalid_files }}`;
+            let invalidFiles = [];
+            try {
+              invalidFiles = JSON.parse(invalidFilesStr || '[]');
+            } catch (e) {
+              console.log('Failed to parse invalid files data');
+            }
+            
+            if (invalidFiles.length > 0) {
+              const fileList = invalidFiles.map(f => `
+            ### 📁 ${f.plugin_name || f.plugin_id}
+            
+            - **文件大小 / File Size:** ${f.file_size_mb} MB
+            - **SHA256:** \`${f.sha256}\`
+            - **下载链接 / Download URL:** ${f.url}
+            `).join('\n---\n');
+              
+              const comment = `## 🚫 文件类型不支持 / Unsupported File Type
+            
+            此Pull Request包含不支持文件类型的插件，已被自动拒绝。
+
+            This Pull Request contains plugin files with unsupported file types and has been automatically rejected.
+
+            ---
+
+            ${fileList}
+
+            ---
+
+            ### ❌ 拒绝原因 / Rejection Reason:
+            
+            检测到上述文件不是有效的ZIP格式文件。根据插件市场规范，所有插件包必须为ZIP格式。
+
+            The files listed above are not valid ZIP format files. According to the plugin market guidelines, all plugin packages must be in ZIP format.
+
+            ### 📋 文件格式要求 / File Format Requirements:
+            - **支持格式 / Supported Format:** ZIP (.zip)
+            - **检测方法 / Detection Method:** 通过文件头魔数验证ZIP格式签名
+            - **ZIP签名 / ZIP Signature:** 文件头以 \`PK\` 开头
+
+            ### 🔧 如何修复 / How to Fix:
+            1. 将您的插件文件打包为ZIP格式
+            2. 更新清单文件中的 \`downloadURL\` 字段
+            3. 重新提交Pull Request
+
+            1. Package your plugin files into ZIP format
+            2. Update the \`downloadURL\` field in your manifest file
+            3. Resubmit the Pull Request
+            `;
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+              
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                state: 'closed'
+              });
+              
+              console.log(`PR closed due to ${invalidFiles.length} invalid file type(s)`);
+            }
+
+      - name: Exit if invalid file types detected
+        if: steps.download-files.outputs.invalid_files != '' && steps.download-files.outputs.invalid_files != '[]'
+        run: exit 1
 
       - name: Post comment for large files
         if: steps.download-files.outputs.large_files != '' && steps.download-files.outputs.large_files != '[]'

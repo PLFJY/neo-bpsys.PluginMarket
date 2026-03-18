@@ -187,8 +187,6 @@ def main() -> int:
             f"- Skipped: {skipped}\n"
             f"- Failed: {failed}\n"
         )
-        if failed > 0:
-            raise PluginMarketError(summary)
         log(summary)
         return 0
     except Exception as exc:  # noqa: BLE001

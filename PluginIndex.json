@@ -24,5 +24,18 @@
     "url": "https://github.com/ZackZhao233/neo-bpsys-wpf.CoopBpPlugin/",
     "downloadURL": "https://github.com/ZackZhao233/neo-bpsys-wpf.CoopBpPlugin/releases/download/DO-NOT-DOWNLOAD!!!!!/DoNotDownload.zip",
     "sha256": "SKIP"
+  },
+  "plfjy.ExamplePlugin": {
+    "id": "plfjy.ExamplePlugin",
+    "name": "示例插件（仅限插件开发者学习使用）",
+    "description": "示例插件，包含了各种插件能做到的功能演示，普通用户不知道是干什么的就不要下载",
+    "version": "1.0.0.0",
+    "apiVersion": "2.0.0.0",
+    "author": "PLFJY",
+    "icon": "https://bpsys.plfjy.top/icon.png",
+    "readme": "",
+    "url": "https://github.com/PLFJY/neo-bpsys-wpf/tree/main/neo-bpsys-wpf.ExamplePlugin",
+    "downloadURL": "https://gitee.com/plfjy/plfjy/releases/download/ExamplePlugin/neo-bpsys-wpf.ExamplePlugin.zip",
+    "sha256": "307269eae3f38717278e4ca009d1a349fd598dd48e83cc5547cf55d0d0442b7d"
   }
 }

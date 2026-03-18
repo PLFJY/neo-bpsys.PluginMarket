@@ -9,19 +9,8 @@
     "icon": "https://raw.githubusercontent.com/jefcrb/3DViewerIDV/refs/heads/master/icon.png",
     "readme": "https://raw.githubusercontent.com/jefcrb/3DViewerIDV/refs/heads/master/README.md",
     "url": "https://github.com/jefcrb/3DViewerIDV",
-    "downloadURL": "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.07.1/3DViewerIDV-v0.07.1.zip"
-  },
-  "CoopBpPlugin": {
-    "id": "CoopBpPlugin",
-    "name": "合作BP插件（早期开发阶段）",
-    "description": "使软件支持多人合作BP",
-    "version": "0.0.2.0",
-    "apiVersion": "2.0.0.0",
-    "author": "RenjiNotBot",
-    "icon": "https://bpsys.plfjy.top/icon.png",
-    "readme": "https://github.com/ZackZhao233/neo-bpsys-wpf.CoopBpPlugin/blob/main/README.md",
-    "url": "https://github.com/ZackZhao233/neo-bpsys-wpf.CoopBpPlugin",
-    "downloadURL": "https://github.com/ZackZhao233/neo-bpsys-wpf.CoopBpPlugin/releases/download/0.0.2.0/0.0.2.0.zip"
+    "downloadURL": "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.07.1/3DViewerIDV-v0.07.1.zip",
+    "sha256": "2fcef2e02cb87f8e7ae54ea3ddef532185a5289dff55cc069f4b74adb88f46a4"
   },
   "plfjy.ExamplePlugin": {
     "id": "plfjy.ExamplePlugin",
@@ -33,6 +22,7 @@
     "icon": "https://bpsys.plfjy.top/icon.png",
     "readme": "",
     "url": "https://github.com/PLFJY/neo-bpsys-wpf/tree/main/neo-bpsys-wpf.ExamplePlugin",
-    "downloadURL": "https://gitee.com/plfjy/plfjy/releases/download/ExamplePlugin/neo-bpsys-wpf.ExamplePlugin.zip"
+    "downloadURL": "https://gitee.com/plfjy/plfjy/releases/download/ExamplePlugin/neo-bpsys-wpf.ExamplePlugin.zip",
+    "sha256": "307269eae3f38717278e4ca009d1a349fd598dd48e83cc5547cf55d0d0442b7d"
   }
 }

@@ -24,7 +24,7 @@ from plugin_market.common import (
     write_github_output,
     write_json_file,
 )
-from plugin_market.manifest import parse_manifest_file, validate_manifest
+from plugin_market.manifest import parse_manifest_file, parse_manifest_text, validate_manifest
 
 
 ZIP_MAGIC_HEADERS = (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
@@ -60,17 +60,52 @@ def validate_zip_package(path: Path) -> None:
         raise PluginMarketError(f"{path.name} is not a readable ZIP archive") from exc
 
 
+def validate_package_manifest_plugin_id(path: Path, expected_plugin_id: str) -> None:
+    try:
+        with zipfile.ZipFile(path, "r") as archive:
+            manifest_candidates = [
+                name
+                for name in archive.namelist()
+                if not name.endswith("/") and Path(name).name.lower() == "manifest.yml"
+            ]
+            if not manifest_candidates:
+                raise PluginMarketError(f"{path.name} does not contain a package manifest.yml")
+            if len(manifest_candidates) > 1:
+                raise PluginMarketError(
+                    f"{path.name} contains multiple manifest.yml files: {', '.join(manifest_candidates)}"
+                )
+
+            package_manifest_path = manifest_candidates[0]
+            package_manifest_text = archive.read(package_manifest_path).decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise PluginMarketError(f"{path.name} package manifest.yml is not valid UTF-8") from exc
+
+    package_manifest = parse_manifest_text(package_manifest_text, f"{path.name}:{package_manifest_path}")
+    package_plugin_id = str(package_manifest.get("id", "")).strip()
+    if not package_plugin_id:
+        raise PluginMarketError(f"{path.name}:{package_manifest_path} is missing required field 'id'")
+    if package_plugin_id != expected_plugin_id:
+        raise PluginMarketError(
+            f"Package manifest id '{package_plugin_id}' does not match plugin manifest id '{expected_plugin_id}'"
+        )
+
+
 def fetch_package(manifest_path: Path, download_dir: Path) -> PackageMetadata:
     manifest = parse_manifest_file(manifest_path)
     errors = validate_manifest(manifest, source=str(manifest_path), manifest_path=str(manifest_path))
     if errors:
         raise PluginMarketError("\n".join(errors))
     plugin_id = manifest["id"]
+    if manifest_path.stem != plugin_id:
+        raise PluginMarketError(
+            f"Manifest file name '{manifest_path.name}' must match plugin id '{plugin_id}'"
+        )
     download_url = manifest["downloadURL"]
     package_path = download_dir / f"{plugin_id}.zip"
 
     download_file(download_url, package_path)
     validate_zip_package(package_path)
+    validate_package_manifest_plugin_id(package_path, plugin_id)
 
     file_size_bytes = package_path.stat().st_size
     sha256 = sha256_file(package_path)

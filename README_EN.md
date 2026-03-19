@@ -35,9 +35,11 @@ python scripts/build-plugin-index.py
 
 - Manifest files must be placed under `PluginManifests/`
 - Recommended file name: `<PluginId>.yml`
+- The manifest file name must match the manifest `id`
 - Only flat `key: value` structure is supported
 - Nested objects and arrays are not supported
 - Every manifest must contain a non-empty and unique `id`
+- The plugin package must contain exactly one `manifest.yml`, and its `id` must match both the marketplace manifest file name and the marketplace manifest `id`
 
 ## Manifest Field Reference
 
@@ -92,9 +94,10 @@ When a PR targets `main`, GitHub Actions first runs a pre-check to:
 1. Ensure the PR changes exactly one `PluginManifests/<PluginId>.yml`.
 2. Reject manual changes to `PluginIndex.json` or `checksums.json`.
 3. Validate the manifest flat structure, required fields, file name vs `id`, and open-PR conflicts for the same plugin.
-4. Download the package and calculate its SHA-256.
-5. Run automatic verification for small packages and write checksum to the release asset `checksums.json` immediately after success.
-6. Mark large packages for manual handling so an administrator can write checksum later.
+4. Download the package, ensure it contains exactly one `manifest.yml`, and verify that the package `id` matches both the marketplace manifest file name and the marketplace manifest `id`.
+5. Calculate the package SHA-256.
+6. Run automatic verification for small packages and write checksum to the release asset `checksums.json` immediately after success.
+7. Mark large packages for manual handling so an administrator can write checksum later.
 
 After the PR is merged into `main`, GitHub Actions will:
 
@@ -116,5 +119,7 @@ Administrators can also run the `backfill-missing-checksums` workflow manually t
 - Required fields: `id`, `version`, `apiVersion`, `downloadURL`
 - `version` and `apiVersion` must be numeric version strings that can be parsed by .NET `System.Version`
 - Each line must be a valid flat `key: value` pair
+- The `PluginManifests/<PluginId>.yml` file name must match the manifest `id`
+- The plugin package must contain exactly one `manifest.yml`, and its `id` must match both the marketplace manifest file name and the marketplace manifest `id`
 - Lines starting with `#` are treated as comments
 - If parsing fails, `id` is missing, duplicate `id` values are found, or the PR manually changes `PluginIndex.json`, the GitHub Action fails

@@ -35,9 +35,11 @@ python scripts/build-plugin-index.py
 
 - 清单文件放在 `PluginManifests/`
 - 文件名建议使用 `<PluginId>.yml`
+- 清单文件名必须与清单中的 `id` 一致
 - 当前只支持扁平的 `key: value` 结构
 - 暂不支持嵌套对象或数组
 - 每个清单必须包含非空且唯一的 `id`
+- 插件包解压后必须包含且只包含一个 `manifest.yml`，其中的 `id` 必须与市场清单文件名、市场清单中的 `id` 完全一致
 
 ## 插件信息填写说明
 
@@ -92,9 +94,10 @@ downloadURL: "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.04/repo
 1. 检查 PR 是否只修改了一个 `PluginManifests/<PluginId>.yml`。
 2. 拒绝手动修改 `PluginIndex.json` 或 `checksums.json`。
 3. 校验 manifest 的扁平结构、必填字段、文件名与 `id` 一致性，以及同插件 open PR 冲突。
-4. 下载插件包并计算 SHA-256。
-5. 小文件走自动校验，校验通过后立即把 checksum 写入 release asset `checksums.json`。
-6. 大文件会被标记为人工处理，等待管理员手动 workflow 写入 checksum。
+4. 下载插件包，检查包内存在唯一的 `manifest.yml`，并校验包内 `id` 与市场清单文件名、市场清单中的 `id` 完全一致。
+5. 计算插件包 SHA-256。
+6. 小文件走自动校验，校验通过后立即把 checksum 写入 release asset `checksums.json`。
+7. 大文件会被标记为人工处理，等待管理员手动 workflow 写入 checksum。
 
 如果 PR 通过并合并到 `main`，GitHub Actions 会继续自动：
 
@@ -116,5 +119,7 @@ downloadURL: "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.04/repo
 - 必填字段：`id`、`version`、`apiVersion`、`downloadURL`
 - `version` 和 `apiVersion` 必须是可转换为 .NET `Version` 对象的纯数字版本号
 - 每一行都必须是合法的扁平 `key: value` 结构
+- `PluginManifests/<PluginId>.yml` 的文件名必须和 manifest 中的 `id` 一致
+- 插件包内必须包含且只包含一个 `manifest.yml`，其中的 `id` 必须与市场清单文件名和市场清单中的 `id` 一致
 - 以 `#` 开头的行会被当作注释
 - 如果清单解析失败、缺少 `id`、出现重复 `id`，或 PR 手动修改了 `PluginIndex.json`，GitHub Action 会失败

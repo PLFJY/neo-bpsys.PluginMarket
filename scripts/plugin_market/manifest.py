@@ -28,6 +28,7 @@ def parse_scalar(raw_value: str) -> str:
 
 
 def parse_manifest_text(text: str, source: str) -> dict[str, str]:
+    text = text.lstrip("\ufeff")
     manifest: dict[str, str] = {}
 
     for line_number, raw_line in enumerate(text.splitlines(), start=1):
@@ -125,4 +126,3 @@ def load_manifest_map(
         manifests[plugin_id] = manifest
 
     return manifests
-

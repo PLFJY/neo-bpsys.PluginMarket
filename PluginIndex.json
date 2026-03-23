@@ -32,7 +32,7 @@
     "version": "0.1.0",
     "apiVersion": "2.0.0.0",
     "author": "PLFJY,Codex,luolan",
-    "icon": "https://bpsys.plfjy.top/icon.png",
+    "icon": "https://raw.githubusercontent.com/PLFJY/neo-bpsys.3DViewer.ASG.Director/refs/heads/main/icon.png",
     "readme": "https://raw.githubusercontent.com/PLFJY/neo-bpsys.3DViewer.ASG.Director/refs/heads/main/README.md",
     "url": "https://github.com/PLFJY/neo-bpsys.3DViewer.ASG.Director",
     "downloadURL": "https://github.com/PLFJY/neo-bpsys.3DViewer.ASG.Director/releases/download/v0.1.0/neo-bpsys-wpf.3DViewerIDV.zip",

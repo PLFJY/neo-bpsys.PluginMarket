@@ -97,7 +97,7 @@ When a PR targets `main`, GitHub Actions first runs a pre-check to:
 4. Download the package, ensure it contains exactly one `manifest.yml`, and verify that the package `id` matches both the marketplace manifest file name and the marketplace manifest `id`.
 5. Calculate the package SHA-256.
 6. Run automatic verification for small packages and write checksum to the release asset `checksums.json` immediately after success.
-7. Mark large packages for manual handling so an administrator can write checksum later.
+7. Mark large packages for manual handling; after review, an administrator only needs to add the `manual-review-approved` label and the workflow will rerun automatically and write the checksum.
 
 After the PR is merged into `main`, GitHub Actions will:
 
@@ -111,7 +111,7 @@ The generated `PluginIndex.json` uses plugin `id` as the top-level key.
 Administrators can also run the `backfill-missing-checksums` workflow manually to:
 
 1. Fill missing hashes for manifests that already exist on `main` but are missing from release checksum state.
-2. Finalize a large-package PR by PR number, write its checksum into release state, and add the `manual-review-approved` / `ci:verified` labels automatically.
+2. Recover a large-package PR manually by PR number when checksum state or labels need to be repaired.
 
 ## Validation Rules
 

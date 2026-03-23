@@ -97,7 +97,7 @@ downloadURL: "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.04/repo
 4. 下载插件包，检查包内存在唯一的 `manifest.yml`，并校验包内 `id` 与市场清单文件名、市场清单中的 `id` 完全一致。
 5. 计算插件包 SHA-256。
 6. 小文件走自动校验，校验通过后立即把 checksum 写入 release asset `checksums.json`。
-7. 大文件会被标记为人工处理，等待管理员手动 workflow 写入 checksum。
+7. 大文件会被标记为人工处理；管理员完成人工审核后，只需给 PR 添加 `manual-review-approved` label，workflow 会自动重跑并写入 checksum。
 
 如果 PR 通过并合并到 `main`，GitHub Actions 会继续自动：
 
@@ -111,7 +111,7 @@ downloadURL: "https://github.com/jefcrb/3DViewerIDV/releases/download/v0.04/repo
 管理员还可以手动触发 `backfill-missing-checksums` workflow，用于：
 
 1. 为当前 `main` 分支里已存在、但 release `checksums.json` 中缺失 checksum 的插件补齐 hash。
-2. 对大文件 PR 完成人工处理后，按 PR 编号写入对应 checksum，并自动补上 `manual-review-approved` / `ci:verified` 标签。
+2. 在需要人工补救时，按 PR 编号为大文件 PR 补写 checksum 并同步标签状态。
 
 ## 校验规则
 

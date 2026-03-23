@@ -213,18 +213,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           THREAT_BOOK_API_KEY: ${{ secrets.THREAT_BOOK_API_KEY }}
+          MANUAL_REVIEW_APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'manual-review-approved') }}
         run: |
-          python3 scripts/plugin-market-package-check.py \
-            --manifest-path "${{ needs.precheck.outputs.manifest_path }}" \
-            --head-sha "${{ github.event.pull_request.head.sha }}" \
-            --repo "${{ github.repository }}" \
-            --token "${{ github.token }}" \
-            --release-tag "${{ env.PLUGIN_MARKET_STATE_RELEASE_TAG }}" \
-            --asset-name "${{ env.PLUGIN_MARKET_STATE_ASSET_NAME }}" \
-            --max-auto-verify-size "${{ env.PLUGIN_MARKET_MAX_AUTOVERIFY_SIZE_BYTES }}" \
-            --sandbox-timeout "${{ env.PLUGIN_MARKET_SANDBOX_TIMEOUT_SECONDS }}" \
-            --min-engines-for-pass "${{ env.PLUGIN_MARKET_MIN_ENGINES_FOR_PASS }}" \
+          ARGS=(
+            --manifest-path "${{ needs.precheck.outputs.manifest_path }}"
+            --head-sha "${{ github.event.pull_request.head.sha }}"
+            --repo "${{ github.repository }}"
+            --token "${{ github.token }}"
+            --release-tag "${{ env.PLUGIN_MARKET_STATE_RELEASE_TAG }}"
+            --asset-name "${{ env.PLUGIN_MARKET_STATE_ASSET_NAME }}"
+            --max-auto-verify-size "${{ env.PLUGIN_MARKET_MAX_AUTOVERIFY_SIZE_BYTES }}"
+            --sandbox-timeout "${{ env.PLUGIN_MARKET_SANDBOX_TIMEOUT_SECONDS }}"
+            --min-engines-for-pass "${{ env.PLUGIN_MARKET_MIN_ENGINES_FOR_PASS }}"
             --sandbox-runtime "${{ env.PLUGIN_MARKET_SANDBOX_RUNTIME_SECONDS }}"
+          )
+
+          if [ "${MANUAL_REVIEW_APPROVED}" = "true" ]; then
+            ARGS+=(--manual-review-approved)
+          fi
+
+          python3 scripts/plugin-market-package-check.py "${ARGS[@]}"
 
       - name: Upload verified result artifact
         if: steps.run_package.outputs.verified_result_path != ''
@@ -306,9 +314,9 @@ jobs:
 
             下一步：
             1. 管理员完成人工审核。
-            2. 管理员手动触发 \`backfill-missing-checksums\` workflow，并填写当前 PR 编号。
-            3. workflow 会把 checksum 写入 release asset，并补上 \`manual-review-approved\` / \`ci:verified\` 标签。
-            4. 本 PR 的 \`plugin-pr-gate\` 会在重新运行后放行。`;
+            2. 管理员给当前 PR 添加 \`manual-review-approved\` label。
+            3. \`plugin-pr-validation\` 会因 label 事件自动重跑，写入 release asset 中的 checksum，并自动移除 \`ci:manual-review-required\`、补上 \`ci:verified\`。
+            4. 本 PR 的 \`plugin-pr-gate\` 会在该次自动重跑后放行。`;
 
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,

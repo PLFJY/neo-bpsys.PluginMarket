@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "Optional PR number for manual large-package processing"
+        description: "Optional PR number for manual recovery of a large-package PR"
         required: false
         type: string
       plugin_id:

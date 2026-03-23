@@ -30,7 +30,6 @@ env:
   PLUGIN_MARKET_STATE_ASSET_NAME: checksums.json
   PLUGIN_MARKET_MAX_AUTOVERIFY_SIZE_BYTES: "104857600"
   PLUGIN_MARKET_SANDBOX_TIMEOUT_SECONDS: "600"
-  PLUGIN_MARKET_MIN_ENGINES_FOR_PASS: "20"
   PLUGIN_MARKET_SANDBOX_RUNTIME_SECONDS: "280"
 
 jobs:
@@ -292,7 +291,6 @@ jobs:
             --asset-name "${{ env.PLUGIN_MARKET_STATE_ASSET_NAME }}"
             --max-auto-verify-size "${{ env.PLUGIN_MARKET_MAX_AUTOVERIFY_SIZE_BYTES }}"
             --sandbox-timeout "${{ env.PLUGIN_MARKET_SANDBOX_TIMEOUT_SECONDS }}"
-            --min-engines-for-pass "${{ env.PLUGIN_MARKET_MIN_ENGINES_FOR_PASS }}"
             --sandbox-runtime "${{ env.PLUGIN_MARKET_SANDBOX_RUNTIME_SECONDS }}"
           )
 

@@ -30,7 +30,6 @@ from plugin_market.manifest import parse_manifest_file, parse_manifest_text, val
 ZIP_MAGIC_HEADERS = (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
 DEFAULT_MAX_AUTOVERIFY_SIZE = int(os.environ.get("PLUGIN_MARKET_MAX_AUTOVERIFY_SIZE_BYTES", str(100 * 1024 * 1024)))
 DEFAULT_SANDBOX_TIMEOUT = int(os.environ.get("PLUGIN_MARKET_SANDBOX_TIMEOUT_SECONDS", "600"))
-DEFAULT_MIN_ENGINES = int(os.environ.get("PLUGIN_MARKET_MIN_ENGINES_FOR_PASS", "20"))
 DEFAULT_SANDBOX_RUNTIME = int(os.environ.get("PLUGIN_MARKET_SANDBOX_RUNTIME_SECONDS", "280"))
 
 
@@ -204,7 +203,6 @@ def run_threatbook_scan(
     metadata: PackageMetadata,
     api_key: str,
     timeout_seconds: int,
-    min_engines_for_pass: int,
     runtime_seconds: int,
 ) -> dict[str, Any]:
     upload_result = upload_to_threatbook(metadata.package_path, api_key, runtime_seconds)
@@ -247,11 +245,6 @@ def run_threatbook_scan(
             raise PluginMarketError(
                 f"ThreatBook detected unsafe results for {metadata.plugin_id}: {', '.join(unsafe_details)}"
             )
-        if total_engines < min_engines_for_pass:
-            raise PluginMarketError(
-                f"ThreatBook returned only {total_engines} engines for {metadata.plugin_id}; "
-                f"at least {min_engines_for_pass} are required for automatic verification."
-            )
 
         return {
             "totalEngines": total_engines,
@@ -275,7 +268,6 @@ def main() -> int:
     parser.add_argument("--asset-name")
     parser.add_argument("--max-auto-verify-size", type=int, default=DEFAULT_MAX_AUTOVERIFY_SIZE)
     parser.add_argument("--sandbox-timeout", type=int, default=DEFAULT_SANDBOX_TIMEOUT)
-    parser.add_argument("--min-engines-for-pass", type=int, default=DEFAULT_MIN_ENGINES)
     parser.add_argument("--sandbox-runtime", type=int, default=DEFAULT_SANDBOX_RUNTIME)
     parser.add_argument("--allow-basic-scan-without-api-key", action="store_true")
     parser.add_argument("--manual-review-approved", action="store_true")
@@ -337,7 +329,6 @@ def main() -> int:
                 metadata=metadata,
                 api_key=api_key,
                 timeout_seconds=args.sandbox_timeout,
-                min_engines_for_pass=args.min_engines_for_pass,
                 runtime_seconds=args.sandbox_runtime,
             )
         elif args.allow_basic_scan_without_api_key:

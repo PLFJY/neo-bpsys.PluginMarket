@@ -29,13 +29,13 @@
     "id": "top.plfjy.3DViewer.ASG.Director",
     "name": "3DViewer.ASG.Director",
     "description": "第五人格统一平台（idvevent）导播软件的 3D 功能迁移实现",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "apiVersion": "2.0.0.0",
     "author": "PLFJY,Codex,luolan",
     "icon": "https://raw.githubusercontent.com/PLFJY/neo-bpsys.3DViewer.ASG.Director/refs/heads/main/icon.png",
     "readme": "https://raw.githubusercontent.com/PLFJY/neo-bpsys.3DViewer.ASG.Director/refs/heads/main/README.md",
     "url": "https://github.com/PLFJY/neo-bpsys.3DViewer.ASG.Director",
-    "downloadURL": "https://github.com/PLFJY/neo-bpsys.3DViewer.ASG.Director/releases/download/v0.1.0/neo-bpsys-wpf.3DViewerIDV.zip",
-    "sha256": "5c9dca0bd4d257662995af24095b1af9f2aab15de04ab58f909c9e7806071dba"
+    "downloadURL": "https://github.com/PLFJY/neo-bpsys.3DViewer.ASG.Director/releases/download/v0.1.1/neo-bpsys-wpf.3DViewerIDV.zip",
+    "sha256": "875c9c5473203a2165dcb79cb6a30e186fbd1965429f2b7c5120904b8ddc673e"
   }
 }

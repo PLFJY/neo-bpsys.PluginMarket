@@ -318,11 +318,7 @@ def main() -> int:
                 needs_manual_review=True,
                 output_path=verified_result_path,
             )
-            status = (
-                "manual-review-complete"
-                if args.manual_review_approved or stored_checksum == metadata.sha256
-                else "manual-review-required"
-            )
+            status = "manual-review-complete" if args.manual_review_approved else "manual-review-required"
             write_github_output("status", status)
             write_github_output("needs_manual_review", "true")
             write_github_output("verified_result_path", str(result_path))

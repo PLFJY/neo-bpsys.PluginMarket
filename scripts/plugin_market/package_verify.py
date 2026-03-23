@@ -278,6 +278,7 @@ def main() -> int:
     parser.add_argument("--min-engines-for-pass", type=int, default=DEFAULT_MIN_ENGINES)
     parser.add_argument("--sandbox-runtime", type=int, default=DEFAULT_SANDBOX_RUNTIME)
     parser.add_argument("--allow-basic-scan-without-api-key", action="store_true")
+    parser.add_argument("--manual-review-approved", action="store_true")
     args = parser.parse_args()
 
     manifest_path = Path(args.manifest_path).resolve()
@@ -305,13 +306,23 @@ def main() -> int:
         write_github_output("checksum_matches", str(stored_checksum == metadata.sha256).lower())
 
         if metadata.file_size_bytes > args.max_auto_verify_size:
+            if args.manual_review_approved:
+                store.upsert_checksum(metadata.plugin_id, metadata.sha256)
+                write_github_output("stored_checksum", metadata.sha256)
+                write_github_output("checksum_present", "true")
+                write_github_output("checksum_matches", "true")
+
             result_path = create_verified_result(
                 metadata=metadata,
                 head_sha=args.head_sha,
                 needs_manual_review=True,
                 output_path=verified_result_path,
             )
-            status = "manual-review-complete" if stored_checksum == metadata.sha256 else "manual-review-required"
+            status = (
+                "manual-review-complete"
+                if args.manual_review_approved or stored_checksum == metadata.sha256
+                else "manual-review-required"
+            )
             write_github_output("status", status)
             write_github_output("needs_manual_review", "true")
             write_github_output("verified_result_path", str(result_path))
@@ -319,6 +330,8 @@ def main() -> int:
                 f"{metadata.plugin_id} exceeds the automatic verification size limit "
                 f"({metadata.file_size_mb:.2f} MiB > {args.max_auto_verify_size / (1024 * 1024):.2f} MiB)."
             )
+            if args.manual_review_approved:
+                log(f"Manual review approval detected; stored SHA-256 for {metadata.plugin_id} in release asset.")
             return 0
 
         api_key = os.environ.get("THREAT_BOOK_API_KEY", "").strip()

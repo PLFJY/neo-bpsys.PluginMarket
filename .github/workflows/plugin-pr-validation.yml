@@ -188,20 +188,11 @@ jobs:
             );
 
             if (success) {
-              if (existing) {
-                await github.rest.issues.deleteComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: existing.id
-                });
-              }
               return;
             }
 
             const body = `${marker}
-            precheck 失败，当前 PR 未进入后续包校验。
-
-            - Failure reason: \`${reason}\`
+            这个 PR 目前还不符合插件市场的基本提交要求，所以还没有进入后续包校验。
 
             详情：
             \`\`\`
@@ -210,7 +201,18 @@ jobs:
 
             处理方式：
             1. 按上面的报错修正 PR 内容。
-            2. 推送新提交，或调整 PR 使其重新触发 \`plugin-pr-validation\`。`;
+            2. 推送新提交后，系统会自动重新检查。
+
+            This PR does not meet the basic submission requirements for the plugin marketplace yet, so it has not entered the follow-up package validation stage.
+
+            Details:
+            \`\`\`
+            ${errorMessage}
+            \`\`\`
+
+            What to do:
+            1. Fix the PR according to the error message above.
+            2. After you push a new commit, the system will rerun the checks automatically.`;
 
             if (existing) {
               await github.rest.issues.updateComment({
@@ -385,20 +387,11 @@ jobs:
             );
 
             if (outcome === 'success') {
-              if (existing) {
-                await github.rest.issues.deleteComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: existing.id
-                });
-              }
               return;
             }
 
             const body = `${marker}
-            package_check 失败，当前 PR 未通过插件包校验。
-
-            - Status: \`${status}\`
+            插件包校验没有通过，当前版本还不能进入合并流程。
 
             详情：
             \`\`\`
@@ -407,7 +400,18 @@ jobs:
 
             处理方式：
             1. 修正插件包或下载地址相关问题。
-            2. 推送新提交，或调整 PR 使其重新触发 \`plugin-pr-validation\`。`;
+            2. 推送新提交后，系统会自动重新检查。
+
+            The plugin package validation did not pass, so this version cannot proceed to merge yet.
+
+            Details:
+            \`\`\`
+            ${errorMessage}
+            \`\`\`
+
+            What to do:
+            1. Fix the plugin package itself or the download URL related issue.
+            2. After you push a new commit, the system will rerun the checks automatically.`;
 
             if (existing) {
               await github.rest.issues.updateComment({
@@ -449,18 +453,11 @@ jobs:
             );
 
             if (status !== 'manual-review-required') {
-              if (existing) {
-                await github.rest.issues.deleteComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: existing.id
-                });
-              }
               return;
             }
 
             const body = `${marker}
-            大文件插件包已计算 SHA-256，但未自动写入正式 checksum 状态。
+            这个插件包体积较大，不能走自动安全校验，需要管理员人工审核后再继续。
 
             - Plugin: \`${pluginId}\`
             - Manifest: \`${manifestPath}\`
@@ -469,9 +466,20 @@ jobs:
 
             下一步：
             1. 管理员完成人工审核。
-            2. 管理员给当前 PR 添加 \`manual-review-approved\` label。
-            3. \`plugin-pr-validation\` 会因 label 事件自动重跑，写入 release asset 中的 checksum，并自动移除 \`ci:manual-review-required\`、补上 \`ci:verified\`。
-            4. 本 PR 的 \`plugin-pr-gate\` 会在该次自动重跑后放行。`;
+            2. 审核通过后，管理员给当前 PR 添加 \`manual-review-approved\` 标签。
+            3. 系统会自动继续后续校验并同步 checksum。
+
+            This plugin package is too large for automatic security validation and requires manual review by an administrator before it can continue.
+
+            - Plugin: \`${pluginId}\`
+            - Manifest: \`${manifestPath}\`
+            - SHA-256: \`${sha256}\`
+            - File size: ${fileSizeMb} MiB
+
+            Next steps:
+            1. An administrator completes the manual review.
+            2. After approval, an administrator adds the \`manual-review-approved\` label to this PR.
+            3. The system will automatically continue the remaining checks and synchronize the checksum.`;
 
             if (existing) {
               await github.rest.issues.updateComment({
@@ -528,31 +536,31 @@ jobs:
             const checksumMatches = process.env.CHECKSUM_MATCHES === 'true';
 
             if (precheckResult !== 'success') {
-              core.setFailed('precheck failed');
+              core.setFailed('the PR does not meet the basic submission requirements yet');
               return;
             }
 
             if (packageResult !== 'success') {
-              core.setFailed('package_check failed');
+              core.setFailed('the plugin package validation step failed');
               return;
             }
 
             const labels = (context.payload.pull_request.labels || []).map(label => label.name);
             if (!needsManualReview) {
               if (packageStatus !== 'verified') {
-                core.setFailed(`automatic package verification did not finish successfully (status: ${packageStatus || 'unknown'})`);
+                core.setFailed('automatic package validation did not finish successfully');
                 return;
               }
               return;
             }
 
             if (!labels.includes('manual-review-approved')) {
-              core.setFailed('large package still requires the manual-review-approved label');
+              core.setFailed('this large package still requires manual review');
               return;
             }
 
             if (!checksumPresent || !checksumMatches) {
-              core.setFailed('manual-review workflow has not written the matching checksum into release state yet');
+              core.setFailed('manual review is approved, but the checksum state is not synchronized yet');
             }
 
       - name: Sync merge gate comment
@@ -586,28 +594,46 @@ jobs:
                 body = `${marker}
                 merge gate 未通过。
 
-                - 原因：自动包校验未完成
-                - Status: \`${packageStatus || 'unknown'}\``;
+                原因：
+                当前版本的自动校验还没有完成通过。
+
+                Merge gate failed.
+
+                Reason:
+                The automatic validation for the current version has not finished successfully yet.`;
               }
             } else if (!labels.includes('manual-review-approved')) {
               body = `${marker}
               merge gate 未通过。
 
-              - 原因：大文件插件仍缺少 \`manual-review-approved\` label
+              原因：
+              这个插件包体积较大，需要先完成人工审核。
 
               处理方式：
               1. 管理员完成人工审核。
-              2. 给当前 PR 添加 \`manual-review-approved\` label。
-              3. \`plugin-pr-validation\` 会自动重跑并继续后续校验。`;
+              2. 审核通过后，给当前 PR 添加 \`manual-review-approved\` 标签。
+              3. 系统会自动重跑并继续后续校验。
+
+              Merge gate failed.
+
+              Reason:
+              This plugin package is large and must complete manual review first.
+
+              What to do:
+              1. An administrator completes the manual review.
+              2. After approval, add the \`manual-review-approved\` label to this PR.
+              3. The system will rerun automatically and continue the remaining checks.`;
             } else if (!checksumPresent || !checksumMatches) {
               body = `${marker}
               merge gate 未通过。
 
-              - 原因：已有人审 label，但 release asset 中还没有匹配的 checksum
+              原因：
+              人工审核已经通过，但校验结果还没有完成同步，请稍后再看一次。
 
-              当前状态：
-              - checksum_present: \`${String(checksumPresent)}\`
-              - checksum_matches: \`${String(checksumMatches)}\``;
+              Merge gate failed.
+
+              Reason:
+              Manual review is already approved, but the validation result has not finished synchronizing yet. Please check again shortly.`;
             }
 
             const comments = await github.paginate(github.rest.issues.listComments, {
@@ -621,13 +647,6 @@ jobs:
             );
 
             if (!body) {
-              if (existing) {
-                await github.rest.issues.deleteComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: existing.id
-                });
-              }
               return;
             }
 

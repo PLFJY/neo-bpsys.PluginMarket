@@ -162,6 +162,72 @@ jobs:
               labels: [failureLabel]
             });
 
+      - name: Sync precheck status comment
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          PRECHECK_OUTCOME: ${{ steps.run_precheck.outcome }}
+          FAILURE_REASON: ${{ steps.run_precheck.outputs.failure_reason }}
+          ERROR_MESSAGE: ${{ steps.run_precheck.outputs.error_message }}
+        with:
+          script: |
+            const marker = '<!-- plugin-market-precheck-status -->';
+            const issueNumber = context.payload.pull_request.number;
+            const success = process.env.PRECHECK_OUTCOME === 'success';
+            const reason = process.env.FAILURE_REASON || 'unknown';
+            const errorMessage = process.env.ERROR_MESSAGE || 'No error details were captured.';
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              per_page: 100
+            });
+            const existing = comments.find(comment =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+
+            if (success) {
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id
+                });
+              }
+              return;
+            }
+
+            const body = `${marker}
+            precheck 失败，当前 PR 未进入后续包校验。
+
+            - Failure reason: \`${reason}\`
+
+            详情：
+            \`\`\`
+            ${errorMessage}
+            \`\`\`
+
+            处理方式：
+            1. 按上面的报错修正 PR 内容。
+            2. 推送新提交，或调整 PR 使其重新触发 \`plugin-pr-validation\`。`;
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body
+              });
+            }
+
       - name: Fail precheck job
         if: steps.run_precheck.outcome != 'success'
         run: |
@@ -293,17 +359,106 @@ jobs:
               });
             }
 
+      - name: Sync package failure comment
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          PACKAGE_OUTCOME: ${{ steps.run_package.outcome }}
+          PACKAGE_STATUS: ${{ steps.run_package.outputs.status }}
+          ERROR_MESSAGE: ${{ steps.run_package.outputs.error_message }}
+        with:
+          script: |
+            const marker = '<!-- plugin-market-package-failure -->';
+            const issueNumber = context.payload.pull_request.number;
+            const outcome = process.env.PACKAGE_OUTCOME || '';
+            const status = process.env.PACKAGE_STATUS || 'unknown';
+            const errorMessage = process.env.ERROR_MESSAGE || 'No error details were captured.';
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              per_page: 100
+            });
+            const existing = comments.find(comment =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+
+            if (outcome === 'success') {
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id
+                });
+              }
+              return;
+            }
+
+            const body = `${marker}
+            package_check 失败，当前 PR 未通过插件包校验。
+
+            - Status: \`${status}\`
+
+            详情：
+            \`\`\`
+            ${errorMessage}
+            \`\`\`
+
+            处理方式：
+            1. 修正插件包或下载地址相关问题。
+            2. 推送新提交，或调整 PR 使其重新触发 \`plugin-pr-validation\`。`;
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body
+              });
+            }
+
       - name: Comment when manual review is required
-        if: steps.run_package.outputs.status == 'manual-review-required'
+        if: always()
         uses: actions/github-script@v7
         with:
           script: |
             const marker = '<!-- plugin-market-manual-review -->';
             const issueNumber = context.payload.pull_request.number;
+            const status = `${{ steps.run_package.outputs.status }}`;
             const sha256 = `${{ steps.run_package.outputs.sha256 }}`;
             const manifestPath = `${{ needs.precheck.outputs.manifest_path }}`;
             const pluginId = `${{ needs.precheck.outputs.plugin_id }}`;
             const fileSizeMb = `${{ steps.run_package.outputs.file_size_mb }}`;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              per_page: 100
+            });
+            const existing = comments.find(comment =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+
+            if (status !== 'manual-review-required') {
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id
+                });
+              }
+              return;
+            }
+
             const body = `${marker}
             大文件插件包已计算 SHA-256，但未自动写入正式 checksum 状态。
 
@@ -317,16 +472,6 @@ jobs:
             2. 管理员给当前 PR 添加 \`manual-review-approved\` label。
             3. \`plugin-pr-validation\` 会因 label 事件自动重跑，写入 release asset 中的 checksum，并自动移除 \`ci:manual-review-required\`、补上 \`ci:verified\`。
             4. 本 PR 的 \`plugin-pr-gate\` 会在该次自动重跑后放行。`;
-
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              per_page: 100
-            });
-            const existing = comments.find(comment =>
-              comment.user?.type === 'Bot' && comment.body?.includes(marker)
-            );
 
             if (existing) {
               await github.rest.issues.updateComment({

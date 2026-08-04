@@ -1,7 +1,7 @@
 id: "3DViewerIDV"
 name: "3DViewerIDV"
 description: "3D characters and scene support"
-version: "0.90.0"
+version: "0.09.0"
 apiVersion: "3.0.0.0"
 author: "paperwings"
 icon: "https://raw.githubusercontent.com/jefcrb/3DViewerIDV/refs/heads/master/icon.png"
